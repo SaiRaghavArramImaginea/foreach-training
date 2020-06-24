@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="7136bc20-b586-4d1d-a0ce-429c2326690a" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="f9b3dfad-665b-4f41-9427-c08647f62f92" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="pramati" database="day3" />
+	</db:config>
+	<flow name="foreach-trainingFlow" doc:id="f87d1297-1253-4616-a6f0-467c00d86978" >
+		<http:listener doc:name="Listener" doc:id="bb1d48c2-4bab-44d5-8183-4ef07cd65c30" config-ref="HTTP_Listener_config" path="/students/load" outputMimeType="application/json" allowedMethods="GET, POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="87998513-aa8e-46e7-8047-573b75488687" message="Input Received - #[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="d548193e-c39b-4323-9251-06ea52e08e9a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="047ed0d6-0d5f-4d42-9150-f73a1327376c" collection="#[payload]">
+			<logger level="INFO" doc:name="Logger" doc:id="77220e56-25e8-49ab-bff7-bb963a2fd978" message="#[payload]"/>
+			<db:insert doc:name="Insert" doc:id="89ed040b-bffd-4855-b0a2-a284fad6b38b" config-ref="Database_Config">
+				<db:sql ><![CDATA[INSERT INTO day3.EmployeeInfo
+           (`FirstName`, `LastName`, `Contact`)
+     VALUES(:firstName,:lastName, :contact)]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{"firstName" : payload.firstName, "lastName": payload.lastName, "contact": payload.contactNo}]]]></db:input-parameters>
+			</db:insert>
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="0a9fcf0b-cc9e-43e1-868e-eb1638b5bdb0" message="#[payload]"/>
+	</flow>
+</mule>
